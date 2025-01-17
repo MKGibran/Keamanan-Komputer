@@ -55,7 +55,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-6 col-12 mt-4 mt-md-0">
+                {{-- <div class="col-lg-6 col-md-6 col-12 mt-4 mt-md-0">
                     <div class="card">
                         <span class="mask bg-dark opacity-10 border-radius-lg"></span>
                         <div class="card-body p-3 position-relative">
@@ -96,7 +96,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> --}}
             </div>
         </div>
     </div>
@@ -127,6 +127,12 @@
                                         class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Filename</th>
                                     <th
+                                        class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Size(KB)</th>
+                                    <th
+                                        class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Encryption</th>
+                                    <th
                                         class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Action
                                     </th>
@@ -150,11 +156,32 @@
                                         <td>
                                             <div class="d-flex px-2 py-1">
                                                 <div>
+                                                    @if (!in_array($extension, ['pdf', 'jpg', 'png', 'txt', 'xls', 'zip']))
+                                                        <img src="{{ asset('template/img/small-logos/file-earmark.svg') }}"
+                                                            class="me-3" alt="xd" />
+                                                    @else
                                                     <img src="{{ asset('template/img/small-logos/filetype-' . $extension . '.svg') }}"
                                                         class="me-3" alt="xd" />
+                                                    @endif
                                                 </div>
                                                 <div class="d-flex flex-column justify-content-center">
                                                     <h6 class="mb-0 text-sm">{{ $item->file_name }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex px-2 py-1">
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">
+                                                        {{ round($item->file_size / 1024, 1) }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex px-2 py-1">
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">
+                                                        {{ $item->enc_type == 'Combined' ? 'RSA + AES' : $item->enc_type }}</h6>
                                                 </div>
                                             </div>
                                         </td>
@@ -200,10 +227,16 @@
             Swal.fire({
                 title: '<h4 style="margin-bottom: 20px; align-items: left;">Upload File</h4>',
                 html: `
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <input type="file" name="file" id="fileInput" style="margin-bottom: 20px; border: 1px solid #ccc; padding: 5px; border-radius: 5px; width: 80%;">
-                </div>
-            `,
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <input type="file" name="file" id="fileInput" style="margin-bottom: 20px; border: 1px solid #ccc; padding: 5px; border-radius: 5px; width: 80%;">
+            <select id="encryptionType" name="encryption_type" style="margin-bottom: 20px; border: 1px solid #ccc; padding: 5px; border-radius: 5px; width: 80%;">
+                <option value="" disabled selected>Select Encryption</option>
+                <option value="AES">AES</option>
+                <option value="RSA">RSA</option>
+                <option value="Combined">AES + RSA</option>
+            </select>
+        </div>
+        `,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Upload',
@@ -212,19 +245,34 @@
                 cancelButtonColor: '#71717A',
                 preConfirm: () => {
                     const fileInput = document.getElementById('fileInput');
+                    const encryptionType = document.getElementById('encryptionType').value;
+
                     if (!fileInput.files.length) {
                         Swal.showValidationMessage('You must select a file!');
                         return false;
                     }
-                    return fileInput.files[0];
+
+                    if (!encryptionType) {
+                        Swal.showValidationMessage('You must select an encryption type!');
+                        return false;
+                    }
+
+                    return {
+                        file: fileInput.files[0],
+                        encryptionType: encryptionType,
+                    };
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const file = result.value;
+                    const {
+                        file,
+                        encryptionType
+                    } = result.value;
 
-                    // Create a FormData object to send the file to the server
+                    // Create a FormData object to send the file and encryption type to the server
                     const formData = new FormData();
                     formData.append('file', file);
+                    formData.append('encryptionType', encryptionType);
 
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')
                         .getAttribute('content');
@@ -240,7 +288,9 @@
                         .then(response => response.json())
                         .then(data => {
                             // Display success message
-                            Swal.fire('Success!', `You uploaded: ${file.name}`, 'success');
+                            Swal.fire('Success!',
+                                `You uploaded: ${file.name} with encryption: ${encryptionType}`,
+                                'success');
                         })
                         .catch(error => {
                             // Display error message
@@ -252,6 +302,7 @@
                 }
             });
         }
+
 
         function confirmDelete(id) {
             Swal.fire({

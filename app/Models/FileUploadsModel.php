@@ -15,6 +15,7 @@ class FileUploadsModel extends Model
         'file_size',
         'mime_type',
         'uploaded_by',
+        'enc_type'
     ];
     protected $keyType = 'string';
     public $incrementing = false;
