@@ -97,11 +97,6 @@ class FileUploadController extends Controller
 
     public function rsaEncrypt(Request $request)
     {
-        // Validasi file input
-        $request->validate([
-            'file' => 'required|file',
-        ]);
-
         $file = $request->file('file');
         $fileContent = file_get_contents($file->getRealPath());
 
