@@ -33,7 +33,8 @@ class FileUploadController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate(['file' => 'required|file',
+        $request->validate([
+            'file' => 'required|file',
         ]);
 
         if ($request->encryptionType == 'AES') {
@@ -63,6 +64,9 @@ class FileUploadController extends Controller
         $file = $request->file('file');
         $fileContent = file_get_contents($file->getRealPath());
 
+        // Hitung waktu mulai
+        $startTime = microtime(true);
+
         // Enkripsi isi file menggunakan AES
         $encryptedContent = $aes->encrypt($fileContent);
 
@@ -75,6 +79,12 @@ class FileUploadController extends Controller
         // Simpan file terenkripsi di storage
         Storage::put($encryptedPath, $storageContent);
 
+        // Hitung waktu selesai
+        $endTime = microtime(true);
+
+        // Waktu yang dibutuhkan
+        $encryptionTime = $endTime - $startTime;
+
         // Simpan metadata file ke database menggunakan model FileUploadsModel
         $fileUpload = FileUploadsModel::create([
             'file_name' => $file->getClientOriginalName(),
@@ -82,8 +92,9 @@ class FileUploadController extends Controller
             'aes_key' => base64_encode($aesKey), // Simpan AES key dalam format base64
             'file_size' => $file->getSize(),
             'uploaded_by' => auth()->user()->id,
-            'mime_type' => $file->getClientMimeType(),
-            'enc_type' => 'AES', // Tambahkan default jika tidak diisi
+            'mime_type' => $file->getClientMimeType(),'enc_type' => 'AES',
+            'enc_time' => $encryptionTime,
+            'dec_time'  => 0 // Tambahkan default jika tidak diisi
         ]);
 
         // Kembalikan respons JSON dengan informasi file
@@ -104,6 +115,9 @@ class FileUploadController extends Controller
         $publicKey = file_get_contents(storage_path('app/keys/public_key.pem')); // Ganti dengan path public key Anda
         $rsa = RSA::loadPublicKey($publicKey);
 
+        // Hitung waktu mulai
+        $startTime = microtime(true);
+
         // Enkripsi konten file menggunakan public key RSA
         $encryptedContent = $rsa->encrypt($fileContent);
 
@@ -112,6 +126,12 @@ class FileUploadController extends Controller
 
         // Simpan konten terenkripsi di storage
         Storage::put($encryptedPath, $encryptedContent);
+
+        // Hitung waktu selesai
+        $endTime = microtime(true);
+
+        // Waktu yang dibutuhkan
+        $encryptionTime = $endTime - $startTime;
 
         // Simpan metadata file ke database
         $fileUpload = FileUploadsModel::create([
@@ -123,6 +143,8 @@ class FileUploadController extends Controller
             'uploaded_by' => auth()->user()->id,
             'mime_type' => $file->getClientMimeType(),
             'enc_type' => 'RSA',
+            'enc_time' => $encryptionTime,
+            'dec_time'  => 0
         ]);
 
         return response()->json([
@@ -148,6 +170,9 @@ class FileUploadController extends Controller
         $file = $request->file('file');
         $fileContent = file_get_contents($file->getRealPath());
 
+        // Hitung waktu mulai
+        $startTime = microtime(true);
+
         // Encrypt the file content using AES
         $encryptedContent = $aes->encrypt($fileContent);
 
@@ -163,6 +188,12 @@ class FileUploadController extends Controller
         $rsa = RSA::loadPublicKey($publicKey);
         $encryptedKey = $rsa->encrypt($aesKey);
 
+        // Hitung waktu selesai
+        $endTime = microtime(true);
+
+        // Waktu yang dibutuhkan
+        $encryptionTime = $endTime - $startTime;
+
         // Save the file metadata in the database
         $fileUpload = FileUploadsModel::create([
             'file_name' => $file->getClientOriginalName(),
@@ -172,6 +203,8 @@ class FileUploadController extends Controller
             'uploaded_by' => auth()->user()->id,
             'mime_type' => $file->getClientMimeType(),
             'enc_type' => 'Combined',
+            'enc_time' => $encryptionTime,
+            'dec_time'  => 0
         ]);
 
         return response()->json($fileUpload, 201);

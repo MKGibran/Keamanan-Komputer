@@ -131,7 +131,10 @@
                                         Size(KB)</th>
                                     <th
                                         class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                        Encryption</th>
+                                        Encryption Type</th>
+                                    <th
+                                        class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Encryption Time</th>
                                     <th
                                         class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Action
@@ -182,6 +185,14 @@
                                                 <div class="d-flex flex-column justify-content-center">
                                                     <h6 class="mb-0 text-sm">
                                                         {{ $item->enc_type == 'Combined' ? 'RSA + AES' : $item->enc_type }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex px-2 py-1">
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">
+                                                        {{ $item->enc_time }} s</h6>
                                                 </div>
                                             </div>
                                         </td>
